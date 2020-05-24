@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+  <soap:Body>
+    <GetRDPFilesResponse xmlns="http://schemas.microsoft.com/ts/2010/09/rdweb">
+      <GetRDPFilesResult>
+        <version>string</version>
+        <wkspRC>
+          <ReconnectContent>
+            <rdpStream>string</rdpStream>
+            <rct>REMOTEAPPLICATION or REMOTEDESKTOP or VMREMOTEDESKTOP</rct>
+          </ReconnectContent>
+          <ReconnectContent>
+            <rdpStream>string</rdpStream>
+            <rct>REMOTEAPPLICATION or REMOTEDESKTOP or VMREMOTEDESKTOP</rct>
+          </ReconnectContent>
+        </wkspRC>
+      </GetRDPFilesResult>
+    </GetRDPFilesResponse>
+  </soap:Body>
+</soap:Envelope>
