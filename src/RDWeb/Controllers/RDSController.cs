@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication;
+using System.Xml;
 
 namespace WebApplication1.Controllers
 {
@@ -26,8 +27,13 @@ namespace WebApplication1.Controllers
         [Route("feed/webfeed.aspx")]
         public IActionResult Index()
         {
-            this.Response.Headers["Cache-Control"] = "private";
-            string sXML = System.IO.File.ReadAllText("Resources.xml");
+            var doc = createXML("BPA");
+            doc = AppendAppResource(doc, "Notepad");
+            doc = AppendAppResource(doc, "Adobe Photoshop 2020"); 
+            doc = AppendDesktopResource(doc, "WIN10-RDP");
+            string sXML = doc.InnerXml;
+            //this.Response.Headers["Cache-Control"] = "private";
+            //string sXML = System.IO.File.ReadAllText("Resources.xml");
             //return Content(sXML);
             return Content(sXML, "application/x-msts-radc+xml; charset=utf-8");
             //return View();
@@ -73,6 +79,166 @@ namespace WebApplication1.Controllers
             string sXML = System.IO.File.ReadAllText("RDWebService.xml");
             return Content(sXML, "text/xml");
             //return View();
+        }
+
+
+        public static XmlDocument createXML(string Name = "RDWEB", string TerminalServer = "ts01.contoso.com")
+        {
+            XmlDocument doc = new XmlDocument();
+            XmlDeclaration xmlDeclaration = doc.CreateXmlDeclaration("1.0", "utf-8", null);
+            XmlElement root = doc.DocumentElement;
+            doc.InsertBefore(xmlDeclaration, root);
+
+            XmlElement eResourceCollection = doc.CreateElement(string.Empty, "ResourceCollection", string.Empty);
+            eResourceCollection.SetAttribute("PubDate", DateTime.UtcNow.ToString("s") + "Z");
+            eResourceCollection.SetAttribute("SchemaVersion", "2.1");
+            eResourceCollection.SetAttribute("xmlns", "http://schemas.microsoft.com/ts/2007/05/tswf");
+
+            XmlElement ePublisher = doc.CreateElement(string.Empty, "Publisher", string.Empty);
+            ePublisher.SetAttribute("LastUpdated", DateTime.UtcNow.ToString("s") + "Z");
+            ePublisher.SetAttribute("Name", Name);
+            ePublisher.SetAttribute("ID", "rzander.azurewebsites.net");
+            ePublisher.SetAttribute("Description", "RDP Resources");
+            ePublisher.SetAttribute("SupportsReconnect", "true");
+
+            XmlElement eResources = doc.CreateElement(string.Empty, "Resources", string.Empty);
+            XmlElement eTerminalServers = doc.CreateElement(string.Empty, "TerminalServers", string.Empty);
+            XmlElement eTerminalServer = doc.CreateElement(string.Empty, "TerminalServer", string.Empty);
+            eTerminalServer.SetAttribute("ID", TerminalServer);
+            eTerminalServer.SetAttribute("Name", TerminalServer);
+            eTerminalServer.SetAttribute("LastUpdated", DateTime.UtcNow.ToString("s") + "Z");
+
+            eTerminalServers.AppendChild(eTerminalServer);
+            ePublisher.AppendChild(eResources);
+            ePublisher.AppendChild(eTerminalServers);
+            eResourceCollection.AppendChild(ePublisher);
+            doc.AppendChild(eResourceCollection);
+
+            return doc;
+        }
+
+        public static XmlDocument AppendAppResource(XmlDocument doc, string App)
+        {
+            XmlElement eResource = doc.CreateElement(string.Empty, "Resource", string.Empty);
+            eResource.SetAttribute("ID", DateTime.Now.Ticks.ToString());
+            eResource.SetAttribute("Alias", App);
+            eResource.SetAttribute("Title", App);
+            eResource.SetAttribute("LastUpdated", DateTime.UtcNow.ToString("s") + "Z");
+            eResource.SetAttribute("Type", "RemoteApp");
+            eResource.SetAttribute("ShowByDefault", "true");
+
+            XmlElement eIcons = doc.CreateElement(string.Empty, "Icons", string.Empty);
+            if (System.IO.File.Exists(System.IO.Path.Combine("rdp", App + ".ico")))
+            {
+                XmlElement eIconRaw = doc.CreateElement(string.Empty, "IconRaw", string.Empty);
+                eIconRaw.SetAttribute("FileType", "Ico");
+                eIconRaw.SetAttribute("FileURL", $"/rdweb/pages/rdp/{ App.ToLower() }.ico");
+                eIcons.AppendChild(eIconRaw);
+            }
+            if (System.IO.File.Exists(System.IO.Path.Combine("rdp", App + "32.png")))
+            {
+                XmlElement eIcon32 = doc.CreateElement(string.Empty, "Icon32", string.Empty);
+                eIcon32.SetAttribute("Dimensions", "32x32");
+                eIcon32.SetAttribute("FileType", "Png");
+                eIcon32.SetAttribute("FileURL", $"/rdweb/pages/rdp/{ App.ToLower() }32.png");
+                eIcons.AppendChild(eIcon32);
+            }
+            if (System.IO.File.Exists(System.IO.Path.Combine("rdp", App + "64.png")))
+            {
+                XmlElement eIcon64 = doc.CreateElement(string.Empty, "Icon64", string.Empty);
+                eIcon64.SetAttribute("Dimensions", "64x64");
+                eIcon64.SetAttribute("FileType", "Png");
+                eIcon64.SetAttribute("FileURL", $"/rdweb/pages/rdp/{ App.ToLower() }64.png");
+                eIcons.AppendChild(eIcon64);
+            }
+
+            XmlElement eFileExtensions = doc.CreateElement(string.Empty, "FileExtensions", string.Empty);
+            XmlElement eFolders = doc.CreateElement(string.Empty, "Folders", string.Empty);
+            XmlElement eFolder = doc.CreateElement(string.Empty, "Folder", string.Empty);
+            eFolder.SetAttribute("Name", "/");
+            eFolders.AppendChild(eFolder);
+
+            XmlElement eHostingTerminalServers = doc.CreateElement(string.Empty, "HostingTerminalServers", string.Empty);
+            XmlElement eHostingTerminalServer = doc.CreateElement(string.Empty, "HostingTerminalServer", string.Empty);
+            XmlElement eResourceFile = doc.CreateElement(string.Empty, "ResourceFile", string.Empty);
+            eResourceFile.SetAttribute("FileExtension", ".rdp");
+            eResourceFile.SetAttribute("URL", $"/rdweb/pages/rdp/{ App.ToLower() }.rdp");
+            XmlElement eTerminalServerRef = doc.CreateElement(string.Empty, "TerminalServerRef", string.Empty);
+            eTerminalServerRef.SetAttribute("Ref", doc.SelectSingleNode("//TerminalServers/TerminalServer").Attributes["ID"].Value);
+
+            eHostingTerminalServer.AppendChild(eResourceFile);
+            eHostingTerminalServer.AppendChild(eTerminalServerRef);
+            eHostingTerminalServers.AppendChild(eHostingTerminalServer);
+
+            eResource.AppendChild(eIcons);
+            eResource.AppendChild(eFileExtensions);
+            eResource.AppendChild(eFolders);
+            eResource.AppendChild(eHostingTerminalServers);
+            doc.SelectSingleNode("//Resources").AppendChild(eResource);
+
+            return doc;
+        }
+
+        public static XmlDocument AppendDesktopResource(XmlDocument doc, string Host)
+        {
+            XmlElement eResource = doc.CreateElement(string.Empty, "Resource", string.Empty);
+            eResource.SetAttribute("ID", DateTime.Now.Ticks.ToString());
+            eResource.SetAttribute("Alias", Host);
+            eResource.SetAttribute("Title", Host);
+            eResource.SetAttribute("LastUpdated", DateTime.UtcNow.ToString("s") + "Z");
+            eResource.SetAttribute("Type", "Desktop");
+            //eResource.SetAttribute("ShowByDefault", "true");
+
+            XmlElement eIcons = doc.CreateElement(string.Empty, "Icons", string.Empty);
+            if (System.IO.File.Exists(System.IO.Path.Combine("rdp", Host + ".ico")))
+            {
+                XmlElement eIconRaw = doc.CreateElement(string.Empty, "IconRaw", string.Empty);
+                eIconRaw.SetAttribute("FileType", "Ico");
+                eIconRaw.SetAttribute("FileURL", $"/rdweb/pages/rdp/{ Host.ToLower() }.ico");
+                eIcons.AppendChild(eIconRaw);
+            }
+            if (System.IO.File.Exists(System.IO.Path.Combine("rdp", Host + "32.png")))
+            {
+                XmlElement eIcon32 = doc.CreateElement(string.Empty, "Icon32", string.Empty);
+                eIcon32.SetAttribute("Dimensions", "32x32");
+                eIcon32.SetAttribute("FileType", "Png");
+                eIcon32.SetAttribute("FileURL", $"/rdweb/pages/rdp/{ Host.ToLower() }32.png");
+                eIcons.AppendChild(eIcon32);
+            }
+            if (System.IO.File.Exists(System.IO.Path.Combine("rdp", Host + "64.png")))
+            {
+                XmlElement eIcon64 = doc.CreateElement(string.Empty, "Icon64", string.Empty);
+                eIcon64.SetAttribute("Dimensions", "64x64");
+                eIcon64.SetAttribute("FileType", "Png");
+                eIcon64.SetAttribute("FileURL", $"/rdweb/pages/rdp/{ Host.ToLower() }64.png");
+                eIcons.AppendChild(eIcon64);
+            }
+
+            XmlElement eFileExtensions = doc.CreateElement(string.Empty, "FileExtensions", string.Empty);
+            //XmlElement eFolders = doc.CreateElement(string.Empty, "Folders", string.Empty);
+            //XmlElement eFolder = doc.CreateElement(string.Empty, "Folder", string.Empty);
+            //eFolder.SetAttribute("Name", "/");
+            //eFolders.AppendChild(eFolder);
+
+            XmlElement eHostingTerminalServers = doc.CreateElement(string.Empty, "HostingTerminalServers", string.Empty);
+            XmlElement eHostingTerminalServer = doc.CreateElement(string.Empty, "HostingTerminalServer", string.Empty);
+            XmlElement eResourceFile = doc.CreateElement(string.Empty, "ResourceFile", string.Empty);
+            eResourceFile.SetAttribute("FileExtension", ".rdp");
+            eResourceFile.SetAttribute("URL", $"/rdweb/pages/rdp/{ Host.ToLower() }.rdp");
+            XmlElement eTerminalServerRef = doc.CreateElement(string.Empty, "TerminalServerRef", string.Empty);
+            eTerminalServerRef.SetAttribute("Ref", doc.SelectSingleNode("//TerminalServers/TerminalServer").Attributes["ID"].Value);
+
+            eHostingTerminalServer.AppendChild(eResourceFile);
+            eHostingTerminalServer.AppendChild(eTerminalServerRef);
+            eHostingTerminalServers.AppendChild(eHostingTerminalServer);
+
+            eResource.AppendChild(eIcons);
+            eResource.AppendChild(eFileExtensions);
+            //eResource.AppendChild(eFolders);
+            eResource.AppendChild(eHostingTerminalServers);
+            doc.SelectSingleNode("//Resources").AppendChild(eResource);
+
+            return doc;
         }
     }
 
