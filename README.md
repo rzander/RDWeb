@@ -6,4 +6,4 @@ This Service allows to simulate an RDS Web Server for publishing RemoteApps.
 - SSL
 
 ## Feed URL:
-https://<host>/rdweb/feed/webfeed.aspx
+https://\<host>/rdweb/feed/webfeed.aspx
