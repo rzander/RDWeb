@@ -27,6 +27,8 @@ namespace RDWeb
             Host.CreateDefaultBuilder(args)
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
+                    webBuilder.UseUrls();
+                    //webBuilder.UseIISIntegration();
                     webBuilder.UseKestrel();
                     webBuilder.UseIISIntegration();
                     webBuilder.UseStartup<Startup>();
