@@ -38,7 +38,7 @@ namespace RDWeb
             });
 
             app.UseRouting();
-            
+
             //app.UseAuthentication();
             app.UseAuthorization();
 

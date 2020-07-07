@@ -1,20 +1,16 @@
-﻿using System;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.StaticFiles;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using System.Xml;
-using System.IO;
+using Microsoft.AspNetCore.StaticFiles;
 using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Formats;
-using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Advanced;
 using SixLabors.ImageSharp.Formats.Png;
+using SixLabors.ImageSharp.Processing;
+using System;
+using System.IO;
+using System.Xml;
 
 namespace WebApplication1.Controllers
 {
-
-
     public class BasicAuthenticationAttribute : ActionFilterAttribute
     {
         public BasicAuthenticationAttribute(string username, string password)
@@ -26,6 +22,7 @@ namespace WebApplication1.Controllers
         public string BasicRealm { get; set; }
         protected string Password { get; set; }
         protected string Username { get; set; }
+
         public override void OnActionExecuting(ActionExecutingContext filterContext)
         {
             var req = filterContext.HttpContext.Request;
@@ -341,12 +338,12 @@ namespace WebApplication1.Controllers
                 {
                     Console.WriteLine("Adding Desktop " + Path.GetFileName(sFile).Split('.')[0]);
                     doc = AppendDesktopResource(doc, Path.GetFileName(sFile).Split('.')[0]);
-                }else
+                }
+                else
                 {
                     Console.WriteLine("Adding App " + Path.GetFileName(sFile).Split('.')[0]);
                     doc = AppendAppResource(doc, Path.GetFileName(sFile).Split('.')[0]);
                 }
-
             }
 
             if (!Directory.Exists(Path.Combine("rdp", "desktop")))
@@ -375,7 +372,7 @@ namespace WebApplication1.Controllers
 
         [HttpGet]
         [Route("pages/rdp/{rtype}/{filename}")]
-        public IActionResult Resources(string rtype,string filename)
+        public IActionResult Resources(string rtype, string filename)
         {
             //if (System.IO.Path.GetExtension(filename).ToLower() == "rdp")
             //{
@@ -384,7 +381,7 @@ namespace WebApplication1.Controllers
             //}
 
             //string filename = "File.pdf"; AppDomain.CurrentDomain.BaseDirectory,
-            string filepath = System.IO.Path.Combine("rdp", rtype,  filename);
+            string filepath = System.IO.Path.Combine("rdp", rtype, filename);
             byte[] filedata = System.IO.File.ReadAllBytes(filepath);
             var provider = new FileExtensionContentTypeProvider();
             string contentType;
